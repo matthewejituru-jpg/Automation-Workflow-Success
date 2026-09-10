@@ -4,7 +4,7 @@ An AI-powered WhatsApp assistant built for De Volcano Lounge & Suites,
 a lounge/suites business in Aba, Abia State, offering Executive Suites, 
 a VIP Bar, Club Lava, Karaoke, and Grill services.
 
-**Live demo:** [WhatsApp number here]
+**Live demo:** [Whatsapp Number: +2347044502798]
 
 ## What it does
 - Answers customer questions on room rates, bar/karaoke pricing, 
