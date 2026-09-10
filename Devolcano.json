@@ -1,0 +1,1289 @@
+{
+  "name": "Devolcano",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {
+          "maxOutputTokens": 1000,
+          "temperature": 0.7,
+          "topK": 40,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -3136,
+        -1072
+      ],
+      "id": "a232be7f-41c1-4543-adf0-6787e954a30a",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "R1kJZUhvt3A4MZep",
+          "name": "First Project"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.final_text }}",
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "=# DE VOLCANO ASSISTANT — SYSTEM PROMPT\n\n## IDENTITY\nYou are De Volcano Assistant, the official WhatsApp assistant for De Volcano Lounge & Suites, located at KM 3 Opobo Road by Magic IM, Aba, Abia State. The business offers Executive Suites, a VIP Bar, Club Lava, Karaoke, a Grill, Free WiFi, and 24/7 electricity. Tone: professional, warm, courteous, persuasive. Never sound funny, sarcastic, robotic, or pushy — persuasion here means removing doubts and making booking/visiting easy, not nagging. Never be rude, dismissive, or impatient, even with indecisive or repetitive customers.\n\n## CUSTOMER NAME\nVariable: `{{ $('Edit Fields 1').item.json.customer_name }}`\nUse it naturally throughout the conversation, but sparingly — never stack it in back-to-back messages. Good spots: the greeting, when confirming a booking/reservation, when re-engaging after a pause, or when softening a persuasive nudge.\n❌ Bad: \"Hi John, we have suites, John. Would you like one, John?\"\n✅ Good: \"Hi John, welcome to De Volcano!\" ... [later] ... \"Alright John, here's your booking summary — shall I go ahead?\"\n\n## RESPONSE LENGTH RULE\nWhatsApp-appropriate reply length: 2–4 sentences per message, occasionally a short list if listing amenities or prices.\n- Never explain more than asked.\n- Ask one question at a time.\n- Break long answers into short consecutive messages rather than one wall of text.\n\n## COMPANY INFO\n- Name: De Volcano Lounge & Suites\n- Location: KM 3 Opobo Road by Magic IM, Aba, Abia State\n- Amenities: Executive Suites, VIP Bar, Club Lava, Karaoke, Grill, Free WiFi, 24/7 Electricity\n-Room rates / suite pricing:\nExecutive Suite: ₦25,000/night | Standard Suite: ₦18,000/night | Weekend rate: +₦3,000\n-Bar/grill/karaoke pricing or minimum spend:\nVIP Bar: ₦10,000 minimum spend per table | Karaoke room: ₦15,000/hour | Grill items: ₦2,500–₦6,000 per plate\n-Check-in / check-out times:\nCheck-in: 12:00 PM | Check-out: 12:00 PM (next day) | Late check-out attracts extra charge\n-Payment methods accepted:\nCash on arrival, bank transfer, or POS on-site. Bank transfer confirmation required before booking is finalized.\n\n## GOOGLE SHEET RECORD-KEEPING\nYou have access to a Google Sheet append node. Use it to log every confirmed booking or reservation request as a new row — never edit or overwrite existing rows, only append.\nFields to log: customer name, phone number/WhatsApp ID, service requested (suite/bar table/karaoke/grill), date and time, number of guests, total price if known, date/time logged, status (\"new\").\nOnly append after the customer has explicitly confirmed the booking summary (see BOOKING RULE).\n\n## GREETING / REPETITION RULE\nOnly greet formally once per session (e.g. \"Welcome to De Volcano Lounge & Suites, {{ $('Edit Fields 1').item.json.customer_name }}! How can I help you today?\"). Reset condition: a new conversation after 24 hours of inactivity, or if the customer greets again after a long gap. Do not repeat the same disclaimer, intro, or welcome message more than once per session.\n\nNever ask the customer to confirm or provide their name — it is always supplied automatically. Treat the variable as ground truth, just like the date/time variable.\n\n## LANGUAGE RULE\nMirror the customer's language, dialect, and formality level. Never switch first into a different language or register than the customer used, and never become informal to the point of sounding unprofessional.\n\n## TOOLS & PRIORITY\n| Tool | Use for |\n|---|---|\n| Company info/knowledge (from this prompt) | Answering questions about amenities, location, pricing |\n| Google Sheet append node | Logging confirmed bookings/reservations |\n| Human handoff | Complaints, special requests, or anything outside your knowledge |\n\nPriority order: confirmed company info in this prompt → Google Sheet (for logging, not lookup) → human staff handoff → never guess or invent pricing, availability, or details not given to you.\n\n## BOOKING / RESERVATION RULE\nOnly trigger a booking flow on explicit intent phrases like \"I want to book,\" \"reserve a suite,\" \"table for karaoke,\" or a customer confirming a specific service + date.\nDo NOT trigger on casual browsing questions like \"how much is a suite\" or \"do you have karaoke\" alone — those get answered, not logged.\nRequired confirmation: before appending to the sheet, send a summary (service, date/time, number of guests, total if known) and wait for an explicit \"yes\" before logging it.\n\n### Field Rules\n- **Date/time:** must be explicitly stated; never assume \"tonight\" or \"this weekend\" without confirming exact date.\n  ❌ Bad: assuming \"this weekend\" means Saturday\n  ✅ Good: \"Which day would you like — Friday or Saturday?\"\n- **Number of guests:** required for suites/tables; never leave blank or guess.\n  ❌ Bad: logging a suite booking with no guest count\n  ✅ Good: \"How many guests should I book the suite for?\"\n- **Total price:** only fill in if confirmed pricing is known; otherwise mark \"to be confirmed by staff.\"\n  ❌ Bad: inventing a rate\n  ✅ Good: \"I'll have a staff member confirm the exact rate with you.\"\n\n## PERSUASION RULE\nIf a customer seems hesitant (\"let me think about it,\" \"maybe later\"), gently address the likely concern (price, ambiance, availability) with one honest, reassuring point — never pressure or repeat the pitch more than twice in a conversation. If they still decline, thank them politely and leave the door open (\"No worries — De Volcano will be here whenever you're ready to unwind\").\n\n## PHONE NUMBER RULE\nNever volunteer the staff/business phone number (07033336700) on your own — not in greetings, not in booking confirmations, not as a \"just in case\" courtesy. Only ever share it in direct response to the customer explicitly asking for it, and even then, only after they've asked 3 separate times in the same conversation. Before sharing the number, you MUST scroll back through the actual conversation history and literally count how many separate messages contain an explicit request for the staff/business number. Do not estimate or assume — count only real, distinct instances. If the count is below 3, say so internally and continue helping instead. Never say \"you've asked X times\" unless you have genuinely counted that many distinct requests in the visible conversation.\n\nFor the 1st and 2nd time a customer asks for the number, do not share it. Instead, ask what they need help with and try to resolve it yourself (booking, pricing, directions, etc.).\n\nOnly on the 3rd explicit request should you share the number, with a brief note that staff can assist further.\n\nThis counter only increases when the customer explicitly asks for the number — never when you're the one who brings it up. Track it per conversation/session.\n\nBooking confirmations must NEVER include the phone number by default — only the summary (service, check-in, check-out, guests, total) and a closing line like \"Let me know if you need anything else.\"\n\n## HUMAN / SENSITIVE INFO RULE\nBeyond the phone number rule above, do not share refund/cancellation details or escalate complaints yourself — hand off to staff for those, letting the customer know someone will follow up.\n\n## CURRENT DATE & TIME\nRight now it is: `{{ $('Edit Fields 1').item.json['current _date'] }}`\nTreat this as ground truth. Never calculate, estimate, or guess the date/time yourself — always use this value directly.\n\n## NEVER GUESS\n- Suite/bar/karaoke pricing not explicitly provided\n- Availability of suites, tables, or karaoke slots\n- Check-in/check-out times\n- Anything about refunds, cancellations, or complaint resolution\n\n## BEFORE SENDING, CHECK\n1. Is this reply short and WhatsApp-appropriate (2–4 sentences)?\n2. Did I avoid guessing any price, availability, or timing detail?\n3. If this is a booking, did I show a summary and get explicit confirmation before logging it to the sheet?\n4. Did I use the customer's name naturally, not repetitively?\n5. If asked for the number, have I checked the ask-count before giving it out?\n6. Am I matching the customer's tone/language without being unprofessional?\n\n---\n\n**Note for the demo:** Placeholders remain for room/service pricing, check-in/out times, and payment methods — fill these in with real info from De Volcano before going live. Everything else is demo-ready.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1312,
+        -1696
+      ],
+      "id": "c5ca4102-c6d6-4e75-99ca-f0c48076f079",
+      "name": "AI Agent",
+      "alwaysOutputData": false,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Edit Fields 1').item.json.media_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Honchoapi"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2240,
+        -1760
+      ],
+      "id": "80bdff24-8afd-4557-9bba-e6fefb58841c",
+      "name": "HTTP Request6"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "76626318-59be-427b-b424-d19a32f744f1",
+              "leftValue": "={{ $('Edit Fields 1').item.json.media_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2464,
+        -1696
+      ],
+      "id": "050936cf-fb2f-4ffc-bdbd-fc7145de0b96",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "inputText": "= {{ $('Edit Fields').item.json.final_text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Boss Call",
+              "description": "=Use this category when the customer wants to speak to a human, negotiate price, do test drive, pay deposit, or discuss anything that requires a real person. \nKeywords: human, representative, agent, talk to someone, negotiation, negotiate, discount, test drive, visit, come to office, payment, deposit, bank, account, serious buyer, ready to buy now.\nIf the message shows buying intent or the customer is asking for personal assistance, classify as boss call"
+            },
+            {
+              "category": "General chat",
+              "description": "=Use this category for all normal questions about cars, price, availability, specifications, features, pictures, and general information. \nKeywords: price, how much, available, do you have, specs, features, year, model, color, pictures, location, what cars.\nIf the customer is just asking questions and not ready to buy or speak to a human, classify as general chat."
+            },
+            {
+              "category": "Photo_Request",
+              "description": "=You are an intent classifier for a car sales WhatsApp bot. \nYour job is to read the customer's last message and classify it into ONE category.\n\nCATEGORIES:\n1. REQUEST_PHOTO - Customer wants to see pictures/photos/images of cars\n2. REQUEST_PRICE - Customer is asking for price/cost/budget\n3. REQUEST_INFO - Customer is asking questions about specs, year, mileage, location\n4. OTHER - Greeting, small talk, or anything else\n\nRULES:\n- If the message mentions: picture, photo, image, see, show me, send me, pics, snap, visual, display\n- If the message mentions a brand + \"see\" or \"show\" like \"show me camry\", \"I want to see rolls royce\"\n- If the message mentions color + \"pic\" like \"red camry pic\"\n- Then classify as REQUEST_PHOTO\n\n- If the message mentions: price, cost, how much, budget, pay, money\n- Then classify as REQUEST_PRICE\n\n- If the message mentions: year, mileage, engine, condition, location, available, details\n- Then classify as REQUEST_INFO\n\n- Everything else is OTHER\n\nReturn ONLY the category name. No explanation.\n\nEXAMPLES:\nInput: \"send me picture of red camry\" → REQUEST_PHOTO\nInput: \"show me rolls royce\" → REQUEST_PHOTO\nInput: \"I want to see Ferrari pics\" → REQUEST_PHOTO\nInput: \"do you have photo\" → REQUEST_PHOTO\nInput: \"how much is camry\" → REQUEST_PRICE\nInput: \"what is the price\" → REQUEST_PRICE\nInput: \"what year is it\" → REQUEST_INFO\nInput: \"hello\" → OTHER\n"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Please classify the text provided by the user into one of the following categories: {categories}, and use the provided formatting instructions below. Don't explain, and only output the json. Do not hold any requests if you don't know what direction to let it go to, release it as General Chat instead of sending no response "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -720,
+        -1696
+      ],
+      "id": "425de413-e66c-4662-a86d-2630a593f32c",
+      "name": "Text Classifier",
+      "alwaysOutputData": false,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o",
+          "mode": "list",
+          "cachedResultName": "Honcho WhatsApp bot",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1948520762,
+          "mode": "list",
+          "cachedResultName": "Leads ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1dGvjyEN4IjGym42FJk7C__CqKnCCtSi5_5IBeawe57o/edit#gid=1948520762"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -1184,
+        -1472
+      ],
+      "id": "da79f846-51bd-429a-b5f6-20efe01c93c7",
+      "name": "Delete rows or columns from sheet in Google Sheets",
+      "credentials": {
+        "googleApi": {
+          "id": "GXAiParbW5lZSNN2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.final_text }}",
+        "options": {
+          "systemMessage": "=HUMAN HANDOFF NOTIFICATION AGENT\n\nROLE\n\nYou are a Human Handoff Notification Agent.\n\nYour ONLY job is to create internal notifications for the business owner (Boss).\n\nYou do NOT talk to customers.\n\nYou do NOT answer customer questions.\n\nYou do NOT provide customer support.\n\nYou do NOT continue the conversation.\n\nYour ONLY responsibility is to notify the Boss whenever a customer requires human assistance.\n\n---\n\nWHO YOU ARE TALKING TO\n\nYou are ALWAYS talking directly to the Boss.\n\nEvery message you generate is intended for the Boss.\n\nNever speak as if you are talking to the customer.\n\nNever address the customer directly.\n\nAlways address the Boss.\n\n---\n\nPRIMARY TASK\n\nYou will receive information from another AI Agent.\n\nAnalyze the information.\n\nExtract:\n\n- Customer Name:{{ $('Webhook').item.json.body.payload._data.notifyName}}\n- Customer Request\n- Vehicle/Product Mentioned\n- Reason for Handoff\n- Any important details\n\nThen generate a concise notification message for the Boss.\n\n---\n\nMANDATORY OPENING\n\nEvery message must begin with:\n\n\"Hey Boss,\"\n\nDo not use any other greeting.\n\n---\n\nMESSAGE FORMAT\n\nUse this format:\n\nHey Boss,\n\nCustomer: {{ $('Webhook').item.json.body.payload._data.notifyName}}\n\nReason for Handoff: [Reason]\n\nRequest: [Summary of what the customer wants]\n\nDetails: [Important information]\n\nPlease follow up with the customer.\n\n---\n\nPURCHASE HANDOFF EXAMPLE\n\nInput:\n\nCustomer Name: John\n\nIntent: Purchase Intent\n\nCustomer wants to buy a Toyota Camry LE.\n\nOutput:\n\nHey Boss,\n\nCustomer: John\n\nReason for Handoff: Purchase Intent\n\nRequest: Customer wants to buy a Toyota Camry LE.\n\nDetails: Customer is ready to proceed with the purchase and requires human assistance.\n\nPlease follow up with the customer.\n\n---\n\nPAYMENT HANDOFF EXAMPLE\n\nInput:\n\nCustomer Name: Sarah\n\nIntent: Human Hand-Off\n\nCustomer wants to make payment.\n\nOutput:\n\nHey Boss,\n\nCustomer: Sarah\n\nReason for Handoff: Payment Request\n\nRequest: Customer is ready to make payment.\n\nDetails: Customer requires assistance from a Toyota representative to complete the payment process.\n\nPlease follow up with the customer.\n\n---\n\nCOMPLAINT HANDOFF EXAMPLE\n\nInput:\n\nCustomer Name: Michael\n\nIntent: Human Hand-Off\n\nCustomer is unhappy with a previous service.\n\nOutput:\n\nHey Boss,\n\nCustomer: Michael\n\nReason for Handoff: Customer Complaint\n\nRequest: Customer would like assistance regarding a service issue.\n\nDetails: Customer is dissatisfied and requires attention from a human representative.\n\nPlease follow up with the customer.\n\n---\n\nLEAD ALERT EXAMPLE\n\nInput:\n\nCustomer Name: David\n\nIntent: Lead Interest\n\nCustomer asked about Toyota Corolla pricing and availability.\n\nOutput:\n\nHey Boss,\n\nCustomer: David\n\nReason for Handoff: Qualified Lead\n\nRequest: Customer is interested in a Toyota Corolla.\n\nDetails: Customer requested pricing and availability information and may be a potential buyer.\n\nPlease follow up with the customer.\n\n---\n\nRULES\n\nAlways include:\n\n- Customer name:{{ $('Webhook').item.json.body.payload._data.notifyname }}\n- Reason for handoff\n- Customer request\n- Important details\n\nNever omit the customer name if available.\n\nNever invent information.\n\nNever guess.\n\nOnly use information provided by the previous AI Agent.\n\nKeep messages short and professional.\n\n---\n\nFINAL MISSION\n\nYour job is not customer service.\n\nYour job is not sales.\n\nYour job is not support.\n\nYour job is to create clear internal notifications for the Boss so that the Boss can quickly understand:\n\n- Who the customer is\n- What the customer wants\n- Why human intervention is needed\n- What action should be taken\n\nEvery message must be written directly to the Boss.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -368,
+        -2096
+      ],
+      "id": "2e3aba22-e3d2-4445-82f0-2dbb8a38a6b8",
+      "name": "AI Agent1",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9b7a9bc6-56aa-4be4-bd4e-005d32a47d75",
+              "name": "final_text",
+              "value": "={{ $('Webhook').item.json.body.payload.body || $('Analyze audio').item.json.content.parts[0].text ||\"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "634cb410-3c73-4aae-80b9-4e892a9a8082",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -1792,
+        -1696
+      ],
+      "id": "fcb4c664-e498-41fb-bd7c-96716e6520e6",
+      "name": "Edit Fields",
+      "retryOnFail": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0a16bcec-c907-4fb5-b838-101b47df8d47",
+              "name": "chatId",
+              "value": "={{ $json.body.payload.from }}",
+              "type": "string"
+            },
+            {
+              "id": "a44fb59d-46be-4176-a2a4-6fe0c89557e2",
+              "name": "customer_name",
+              "value": "={{ $json.body.payload._data.notifyName }}",
+              "type": "string"
+            },
+            {
+              "id": "10c39883-778f-4fa5-adc2-2f66e03ed682",
+              "name": "media_url",
+              "value": "={{ $json.body.payload.media.url }}",
+              "type": "string"
+            },
+            {
+              "id": "692dcdca-f9e4-4e96-94d2-15f28585c422",
+              "name": "User_message",
+              "value": "= {{ $json.body.payload.body }}",
+              "type": "string"
+            },
+            {
+              "id": "b60ee681-1adf-4bf1-974d-95e82f964cdf",
+              "name": "account_name",
+              "value": "={{ $json.body.me.pushName }}",
+              "type": "string"
+            },
+            {
+              "id": "09f3f938-3fa9-49f0-acdc-d88cd53b6c5f",
+              "name": "current _date",
+              "value": "={{ $now.setZone('Africa/Lagos').toFormat(\"cccc, dd LLLL yyyy, hh:mm a\")\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2912,
+        -1696
+      ],
+      "id": "f9b3a718-9856-49ce-b015-b271f165ca50",
+      "name": "Edit Fields 1"
+    },
+    {
+      "parameters": {
+        "text": "={{$json.output }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "image_url",
+              "description": "=You are an Information Extractor, your work is to only extract the URL from every text that comes it you and there's a url in it, don't output anything that is not a url."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        -368,
+        -1392
+      ],
+      "id": "05ecb717-aabb-44ae-8e8b-d40fa6d82500",
+      "name": "Information Extractor1",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "model": "ministral-8b-latest",
+        "options": {
+          "maxTokens": 500,
+          "temperature": 0.7,
+          "maxRetries": 2,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        -1472
+      ],
+      "id": "952072d8-8ecf-41b7-a462-fac1e1943719",
+      "name": "Mistral Cloud Chat Model",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "NRHAZHyUIrE4qFyl",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "ministral-14b-latest",
+        "options": {
+          "maxTokens": 1500,
+          "temperature": 0.7,
+          "maxRetries": 2,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        -1872
+      ],
+      "id": "684f2f20-f70e-4995-85b7-00afd02613a5",
+      "name": "Mistral Cloud Chat Model1",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "NRHAZHyUIrE4qFyl",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "ministral-8b-latest",
+        "options": {
+          "maxTokens": 1500,
+          "temperature": 0.7,
+          "maxRetries": 2,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        -1184
+      ],
+      "id": "834c0926-cc8d-4276-8027-a87454248e24",
+      "name": "Mistral Cloud Chat Model2",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "NRHAZHyUIrE4qFyl",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tavily.com/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer  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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $('Edit Fields').item.json.final_text }}"
+            },
+            {
+              "name": "topic",
+              "value": "general"
+            },
+            {
+              "name": "search_depth",
+              "value": "basic"
+            },
+            {
+              "name": "max_results",
+              "value": "5"
+            },
+            {
+              "name": "time_range",
+              "value": "day"
+            },
+            {
+              "name": "include_answer",
+              "value": "basic"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        -1056,
+        -1472
+      ],
+      "id": "08e9347b-882a-47a8-99ae-d057d8e14c3c",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {
+          "maxOutputTokens": 1000,
+          "temperature": 0.7,
+          "topK": 40,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -656,
+        -1440
+      ],
+      "id": "975d5ac4-1c75-4721-b456-df4f30df0c73",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "R1kJZUhvt3A4MZep",
+          "name": "First Project"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-oss-120b",
+          "mode": "id"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "maxTokens": 1000,
+          "temperature": 0.7,
+          "maxRetries": 2,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1440,
+        -1472
+      ],
+      "id": "ddc7a665-a971-4ee4-8e7e-927f686fd665",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "skWmPmfQrtiLPtfU",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.1-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.1-flash-lite"
+        },
+        "text": "=Transcribe this audio word-for-word exactly as spoken. Do not translate. If the speaker is speaking Igbo, transcribe it in Igbo. If English, transcribe in English. If Nigerian Pidgin, transcribe in Pidgin. Output only the transcription, nothing else.",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -2016,
+        -1760
+      ],
+      "id": "3ef13da2-3ab0-49fb-b8d3-cfe124c4beb0",
+      "name": "Analyze audio",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "R1kJZUhvt3A4MZep",
+          "name": "First Project"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://devlikeaprowaha-production-69e0.up.railway.app/api/sendImage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Majoreapi"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "session",
+              "value": "={{ $('Webhook').item.json.body.session }}"
+            },
+            {
+              "name": "chatId",
+              "value": "={{ $('Edit Fields 1').item.json.chatId }}"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('AI Agent').item.json.output }}"
+            },
+            {
+              "name": "file.mimetype",
+              "value": "image/jpeg"
+            },
+            {
+              "name": "file.url",
+              "value": "={{ $('Information Extractor1').item.json.output.image_url }}"
+            },
+            {
+              "name": "file.filename",
+              "value": "filename.jpeg"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -16,
+        -1392
+      ],
+      "id": "d0246ddc-baa8-476e-9b58-93274a8c955f",
+      "name": "SEND IMAGE"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://devlikeaprowaha-production-69e0.up.railway.app/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Honchoapi"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "137199089615072@lid"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('AI Agent1').item.json.output }}"
+            },
+            {
+              "name": "session",
+              "value": "={{ $('Webhook').item.json.body.session }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -16,
+        -1984
+      ],
+      "id": "97fd684d-3b7f-4c83-9bd3-602b7981b441",
+      "name": "SEND Boss Text"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1LyahUaMY6T5euwFj1o-oiG4QUMcMfsRDz_2Y9v77piM",
+          "mode": "list",
+          "cachedResultName": "Honcho Crib Hotels and Suite",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LyahUaMY6T5euwFj1o-oiG4QUMcMfsRDz_2Y9v77piM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1393874749,
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1LyahUaMY6T5euwFj1o-oiG4QUMcMfsRDz_2Y9v77piM/edit#gid=1393874749"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Status', `One of: New Inquiry, Booking Confirmed, Needs Follow-up, Cancelled.`, 'string') }}",
+            "Follow up date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Follow_up_date', `Only fill this if Status is Needs Follow-up (e.g. a hesitant customer). Suggest a date 1–2 days out. Leave blank otherwise.`, 'string') }}",
+            "Follow up note": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Follow_up_note', `Short reason for the follow-up (e.g. \"Asked about pricing, said will think about it\").`, 'string') }}",
+            "Follow up status ": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Follow_up_status_', `Pending if a follow-up date is set, otherwise leave blank.`, 'string') }}",
+            "check in date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('check_in_date', ` Use the exact same value as the \"Date\" field above — do not recalculate or reformat it. Copy it directly to log the customer's check-in date and time. to log the exact date and time the customer checks in (or confirms their check-in date). Never type this manually or estimate it — always pull it from this variable so it reflects the real curretime in Lagos.`, 'string') }}",
+            "Room Type": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Room_Type', `The specific suite/room they asked about or booked (e.g. \"Executive Suite\"). If they haven't picked one yet but showed interest, write \"Not yet specified.\"\nStatus — One of: New Inquiry, Booking Confirmed, Needs Follow-up, Cancelled.`, 'string') }}",
+            "Phone Number ": "={{ $('Edit Fields 1').item.json.chatId }}",
+            "Date": "={{ $now.setZone('Africa/Lagos').toFormat(\"cccc, dd LLLL yyyy, hh:mm a\")\n}}",
+            "check out date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('check_out_date', `Before filling this in, calculate the check-out date/time based on the customer's confirmed length of stay (e.g. \"2 nights\") added to the check-in value above — never guess or round it off. Once calculated, format it the same way: cccc, dd LLLL yyyy, hh:mm a (e.g. \"Wednesday, 03 September 2026, 12:00 PM\"). If the customer hasn't confirmed how many nights they're staying, ask first — don't fill in check-out until that's known.`, 'string') }}",
+            "Customer Name": "={{ $('Edit Fields 1').item.json.customer_name }}",
+            "Number Request ": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Number_Request_', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "Phone Number "
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone Number ",
+              "displayName": "Phone Number ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Room Type",
+              "displayName": "Room Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Follow up date",
+              "displayName": "Follow up date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Follow up note",
+              "displayName": "Follow up note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Follow up status ",
+              "displayName": "Follow up status ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "check in date",
+              "displayName": "check in date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "check out date",
+              "displayName": "check out date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Number Request ",
+              "displayName": "Number Request ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -928,
+        -1472
+      ],
+      "id": "1f076f50-c31d-4fb8-8606-66e982944be7",
+      "name": "Append or update row in sheet in Google Sheets",
+      "credentials": {
+        "googleApi": {
+          "id": "GXAiParbW5lZSNN2",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Edit Fields 1').item.json.chatId }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        -1312,
+        -1472
+      ],
+      "id": "d061ae37-f28b-4482-af97-1a534080d818",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "xxw0hFgDPfeX8p6n",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Edit Fields 1').item.json.chatId }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        -240,
+        -1872
+      ],
+      "id": "3f23eea7-edb4-4ac1-85e7-204bfb7981b7",
+      "name": "Postgres Chat Memory1",
+      "credentials": {
+        "postgres": {
+          "id": "xxw0hFgDPfeX8p6n",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://devlikeaprowaha-production-69e0.up.railway.app/api/{{$('Webhook').item.json.body.session}}/presence",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Majoreapi"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "={{ $('Webhook').item.json.body.payload.from }}"
+            },
+            {
+              "name": "presence",
+              "value": "typing"
+            },
+            {
+              "name": "session",
+              "value": "={{ $('Webhook').item.json.body.session }}"
+            },
+            {
+              "name": "delay",
+              "value": "3000"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2688,
+        -1696
+      ],
+      "id": "4079fe99-51fe-4ce7-9062-b0da01063acd",
+      "name": "Presence"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://devlikeaprowaha-production-69e0.up.railway.app/api/sendText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Majoreapi"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "={{ $('Webhook').item.json.body.payload.from }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $('AI Agent').item.json.output}}"
+            },
+            {
+              "name": "session",
+              "value": "={{ $('Webhook').item.json.body.session }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        -1696
+      ],
+      "id": "988711ec-3030-476a-a0f4-8ef7aafe0108",
+      "name": "SEND TEXT"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://devlikeaprowaha-production-69e0.up.railway.app/api/{{$('Webhook').item.json.body.session}}/presence",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "Majoreapi"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chatId",
+              "value": "={{ $('Webhook').item.json.body.payload.from }}"
+            },
+            {
+              "name": "presence",
+              "value": "typing"
+            },
+            {
+              "name": "session",
+              "value": "={{ $('Webhook').item.json.body.session }}"
+            },
+            {
+              "name": "delay",
+              "value": "3000"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -304,
+        -1696
+      ],
+      "id": "71df4a20-84bf-4b30-a428-04be023f959e",
+      "name": "Presence "
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('AI Agent').item.json.output.length >= 500 ? 10 : ($('AI Agent').item.json.output.length >= 200 ? 5 : 2) }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -16,
+        -1696
+      ],
+      "id": "6a090ffa-49e9-4e58-95a5-88aed8ae35d8",
+      "name": "Wait",
+      "webhookId": "20630801-80dc-4366-b819-379cf331d8c0"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Volcano ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -3136,
+        -1696
+      ],
+      "id": "85ce7c4f-48ab-45f9-a17c-00f05b6b30e9",
+      "name": "Webhook",
+      "webhookId": "c1222a94-5c1f-455c-bbfc-c8a9fd202f1b"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request6": {
+      "main": [
+        [
+          {
+            "node": "Analyze audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request6",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete rows or columns from sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Presence ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Presence ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "SEND Boss Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields 1": {
+      "main": [
+        [
+          {
+            "node": "Presence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor1": {
+      "main": [
+        [
+          {
+            "node": "SEND IMAGE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Analyze audio": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Presence": {
+      "main": [
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Presence ": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "SEND TEXT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "timezone": "Africa/Lagos",
+    "saveDataSuccessExecution": "none",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "47faa9a4-ac74-49b0-9b3a-f7cdf5c9f12f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a68d6411e38ac003ed3340caa4b9f1d9aac89583862bbf69def18aece27917b6"
+  },
+  "nodeGroups": [],
+  "id": "8xt3HDWh64kBQOKY",
+  "tags": []
+}
